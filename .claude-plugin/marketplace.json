@@ -1,0 +1,18 @@
+{
+  "name": "dandoonian",
+  "owner": {
+    "name": "dandoonian"
+  },
+  "metadata": {
+    "description": "Shared Claude Code setup: skills and team conventions."
+  },
+  "plugins": [
+    {
+      "name": "claude-setup",
+      "source": "./plugins/claude-setup",
+      "description": "Shared skills for Claude Code and the Claude app.",
+      "repository": "https://github.com/dandoonian/claude-setup",
+      "license": "MIT"
+    }
+  ]
+}

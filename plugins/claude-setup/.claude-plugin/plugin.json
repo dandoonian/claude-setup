@@ -1,0 +1,10 @@
+{
+  "name": "claude-setup",
+  "version": "1.0.0",
+  "description": "Shared skills for Claude Code and the Claude app.",
+  "author": {
+    "name": "dandoonian"
+  },
+  "repository": "https://github.com/dandoonian/claude-setup",
+  "license": "MIT"
+}
