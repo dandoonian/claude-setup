@@ -113,7 +113,11 @@ Copy-Item $SharedMd (Join-Path $TargetDir "CLAUDE.md") -Force
 
 # ---------- Plugins ----------
 Write-Host "==> Installing plugins"
-if (Get-Command claude -ErrorAction SilentlyContinue) {
+$ClaudeExe = (Get-Command claude -ErrorAction SilentlyContinue).Source
+$LocalExe = Join-Path $env:USERPROFILE ".local\bin\claude.exe"
+if (-not $ClaudeExe -and (Test-Path $LocalExe)) { $ClaudeExe = $LocalExe }
+if ($ClaudeExe) {
+  Set-Alias -Name claude -Value $ClaudeExe -Scope Script
   $ErrorActionPreference = "Continue"
   claude plugin marketplace add dandoonian/claude-setup 2>$null | Out-Null
   if ($LASTEXITCODE -ne 0) { claude plugin marketplace update dandoonian }
@@ -122,7 +126,12 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
   claude plugin marketplace add anthropics/claude-plugins-official 2>$null | Out-Null
   claude plugin install code-review@claude-plugins-official
 } else {
-  Write-Host "    Claude Code not found. Install it, then run this script again."
+  Write-Host "    The Claude Code command-line tool ('claude') isn't installed, so the plugins were skipped."
+  Write-Host "    Either install it and run this script again:"
+  Write-Host "      irm https://claude.ai/install.ps1 | iex"
+  Write-Host "    or run these two commands inside Claude Code:"
+  Write-Host "      /plugin marketplace add dandoonian/claude-setup"
+  Write-Host "      /plugin install claude-setup@dandoonian"
 }
 
 Write-Host "==> Done. Restart Claude Code to load the changes."

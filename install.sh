@@ -105,7 +105,10 @@ cp "$SHARED_MD" "$TARGET_DIR/CLAUDE.md"
 
 # ---------- Plugins ----------
 echo "==> Installing plugins"
-if command -v claude >/dev/null 2>&1; then
+CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
+[ -z "$CLAUDE_BIN" ] && [ -x "$HOME/.local/bin/claude" ] && CLAUDE_BIN="$HOME/.local/bin/claude"
+if [ -n "$CLAUDE_BIN" ]; then
+  claude() { "$CLAUDE_BIN" "$@"; }
   claude plugin marketplace add dandoonian/claude-setup >/dev/null 2>&1 \
     || claude plugin marketplace update dandoonian || true
   claude plugin install claude-setup@dandoonian || true
@@ -113,7 +116,12 @@ if command -v claude >/dev/null 2>&1; then
   claude plugin marketplace add anthropics/claude-plugins-official >/dev/null 2>&1 || true
   claude plugin install code-review@claude-plugins-official || true
 else
-  echo "    Claude Code not found. Install it, then run this script again."
+  echo "    The Claude Code command-line tool ('claude') isn't installed, so the plugins were skipped."
+  echo "    Either install it and run this script again:"
+  echo "      curl -fsSL https://claude.ai/install.sh | bash"
+  echo "    or run these two commands inside Claude Code:"
+  echo "      /plugin marketplace add dandoonian/claude-setup"
+  echo "      /plugin install claude-setup@dandoonian"
 fi
 
 echo "==> Done. Restart Claude Code to load the changes."
