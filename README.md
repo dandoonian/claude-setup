@@ -45,8 +45,25 @@ Skills also update on their own through the plugin marketplace.
 ## What the installer changes
 
 - Copies `CLAUDE.md` to `~/.claude/claude-setup/CLAUDE.md`.
-- Adds one line, `@~/.claude/claude-setup/CLAUDE.md`, to your `~/.claude/CLAUDE.md`. Anything you already have there stays as it is.
-- Adds this repo as a plugin marketplace and installs `claude-setup` and `code-review`.
+- Links it from your own `~/.claude/CLAUDE.md`. If you don't have one, it's created. If you do, the installer asks what to do:
+  - **Merge** (recommended): keeps your file and adds one line, `@~/.claude/claude-setup/CLAUDE.md`, which loads the shared notes alongside yours.
+  - **Replace**: backs up your file as `CLAUDE.md.backup-<date>` and uses only the shared notes.
+  - **Diff**: shows your file next to the shared notes, then asks again.
+  - **Abort**: changes nothing.
+
+  It also warns if your file already contains some of the shared notes, so you can remove the duplicates.
+- Adds this repo and Anthropic's official marketplace, and installs the `claude-setup` and `code-review` plugins.
+
+To skip the question (for scripts), pass the choice up front:
+
+```bash
+./install.sh --merge          # or --replace / --abort
+```
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Mode merge    # or replace / abort
+```
+
+Without a terminal to ask in, the installer merges.
 
 To uninstall: remove that line from `~/.claude/CLAUDE.md`, delete `~/.claude/claude-setup/`, and run `/plugin` to uninstall the plugins.
 
