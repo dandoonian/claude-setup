@@ -4,7 +4,9 @@ A shared Claude Code setup: team conventions (`CLAUDE.md`) and skills, installed
 
 ## What you get
 
-- **`CLAUDE.md`**: shared instructions loaded into every Claude Code session. Right now: run `/code-review` and `/security-review` before every push.
+- **`CLAUDE.md`**: shared instructions loaded into every Claude Code session:
+  - run `/code-review` and `/security-review` before every push
+  - coding guidelines to avoid common LLM mistakes: think before coding, keep it simple, make surgical changes, verify against clear goals (from [andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills), MIT, see [NOTICE](NOTICE))
 - **Skills** (as the `claude-setup` plugin):
   - `frontend-design`: guidance for distinctive, intentional UI design (by Anthropic, Apache-2.0, see [NOTICE](NOTICE)).
 - **`code-review`** plugin from Anthropic's official marketplace, which the `CLAUDE.md` rule relies on.
