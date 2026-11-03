@@ -41,44 +41,37 @@ if ($hasContent -and ($userLines -contains $ImportLine)) {
   $overlap = @($sharedLines | Where-Object { $userLines -contains $_ }).Count
   git --no-pager diff --no-index --quiet -w -- $UserMd $SharedMd 2>$null | Out-Null
   $identical = ($LASTEXITCODE -eq 0)
-  Write-Host "    You already have ~\.claude\CLAUDE.md ($($userLines.Count) lines)."
-  if ($identical) {
-    Write-Host "    It's identical to the shared notes, so Replace is the clean choice."
-  } elseif ($overlap -gt 0) {
-    Write-Host "    Note: $overlap line(s) of the shared notes are already in it. After merging,"
-    Write-Host "    remove those from your own file so they don't appear twice."
+  $Action = ""
+  if ($identical -and $Mode -ne "abort") {
+    $Action = "identical"
+  } else {
+    Write-Host "    You already have ~\.claude\CLAUDE.md ($($userLines.Count) lines)."
+    if ($overlap -gt 0) {
+      Write-Host "    Note: $overlap line(s) of the shared notes are already in it. After merging,"
+      Write-Host "    remove those from your own file so they don't appear twice."
+    }
   }
-
-  $Action = $Mode
+  if (-not $Action) { $Action = $Mode }
   if (-not $Action) {
     $interactive = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
     if ($interactive) {
       while (-not $Action) {
         Write-Host ""
         Write-Host "    What do you want to do?"
-        if ($identical) {
-          Write-Host "      [m] Merge:   keep your file and add the shared notes"
-          Write-Host "      [r] Replace: back up your file and use only the shared notes (recommended)"
-        } else {
-          Write-Host "      [m] Merge:   keep your file and add the shared notes (recommended)"
-          Write-Host "      [r] Replace: back up your file and use only the shared notes"
-        }
+        Write-Host "      [m] Merge:   keep your file and add the shared notes (recommended)"
+        Write-Host "      [r] Replace: back up your file and use only the shared notes"
         Write-Host "      [d] Diff:    show your file vs. the shared notes"
         Write-Host "      [a] Abort:   change nothing"
         $choice = Read-Host "    Choice [m/r/d/a]"
         switch ($choice.ToLower()) {
-          ""  { if ($identical) { $Action = "replace" } else { $Action = "merge" } }
+          ""  { $Action = "merge" }
           "m" { $Action = "merge" }
           "r" { $Action = "replace" }
           "a" { $Action = "abort" }
           "d" {
             Write-Host ""
-            if ($identical) {
-              Write-Host "    No differences: your file is the same as the shared notes."
-            } else {
-              Write-Host "    --- your ~\.claude\CLAUDE.md   +++ shared notes"
-              git --no-pager diff --no-index -- $UserMd $SharedMd
-            }
+            Write-Host "    --- your ~\.claude\CLAUDE.md   +++ shared notes"
+            git --no-pager diff --no-index -- $UserMd $SharedMd
           }
           default { Write-Host "    Please type m, r, d or a." }
         }
@@ -93,6 +86,12 @@ switch ($Action) {
   "abort" {
     Write-Host "    Aborted. Nothing was changed."
     exit 0
+  }
+  "identical" {
+    Copy-Item $UserMd "$UserMd.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    Set-Content -Path $UserMd -Value $ImportLine
+    Write-Host "    Files are identical: you already have the latest shared notes. Nothing to do!"
+    Write-Host "    (Linked them so future updates apply automatically; your copy is backed up.)"
   }
   "replace" {
     $backup = "$UserMd.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
