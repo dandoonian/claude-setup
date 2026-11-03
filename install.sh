@@ -40,8 +40,12 @@ elif [ ! -s "$USER_MD" ]; then
 else
   # Warn if their file already contains lines from the shared notes
   OVERLAP=$(grep -v '^[[:space:]]*$' "$SHARED_MD" | grep -cxFf - "$USER_MD" || true)
+  IDENTICAL=no
+  git --no-pager diff --no-index --quiet -w -- "$USER_MD" "$SHARED_MD" >/dev/null 2>&1 && IDENTICAL=yes
   echo "    You already have ~/.claude/CLAUDE.md ($(wc -l < "$USER_MD" | tr -d ' ') lines)."
-  if [ "$OVERLAP" -gt 0 ]; then
+  if [ "$IDENTICAL" = yes ]; then
+    echo "    It's identical to the shared notes, so Replace is the clean choice."
+  elif [ "$OVERLAP" -gt 0 ]; then
     echo "    Note: $OVERLAP line(s) of the shared notes are already in it. After merging,"
     echo "    remove those from your own file so they don't appear twice."
   fi
@@ -52,16 +56,29 @@ else
       while [ -z "$ACTION" ]; do
         echo
         echo "    What do you want to do?"
-        echo "      [m] Merge:   keep your file and add the shared notes (recommended)"
-        echo "      [r] Replace: back up your file and use only the shared notes"
+        if [ "$IDENTICAL" = yes ]; then
+          echo "      [m] Merge:   keep your file and add the shared notes"
+          echo "      [r] Replace: back up your file and use only the shared notes (recommended)"
+        else
+          echo "      [m] Merge:   keep your file and add the shared notes (recommended)"
+          echo "      [r] Replace: back up your file and use only the shared notes"
+        fi
         echo "      [d] Diff:    show your file vs. the shared notes"
         echo "      [a] Abort:   change nothing"
         read -r -p "    Choice [m/r/d/a]: " CHOICE
         case "$CHOICE" in
-          m|M|"") ACTION=merge ;;
+          "")     [ "$IDENTICAL" = yes ] && ACTION=replace || ACTION=merge ;;
+          m|M)    ACTION=merge ;;
           r|R)    ACTION=replace ;;
           a|A)    ACTION=abort ;;
-          d|D)    git --no-pager diff --no-index -- "$USER_MD" "$SHARED_MD" || true ;;
+          d|D)
+            echo
+            if [ "$IDENTICAL" = yes ]; then
+              echo "    No differences: your file is the same as the shared notes."
+            else
+              echo "    --- your ~/.claude/CLAUDE.md   +++ shared notes"
+              git --no-pager diff --no-index -- "$USER_MD" "$SHARED_MD" || true
+            fi ;;
           *)      echo "    Please type m, r, d or a." ;;
         esac
       done

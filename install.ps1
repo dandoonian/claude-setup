@@ -39,8 +39,12 @@ if ($hasContent -and ($userLines -contains $ImportLine)) {
 } else {
   $sharedLines = @(Get-Content $SharedMd | Where-Object { $_.Trim() -ne "" })
   $overlap = @($sharedLines | Where-Object { $userLines -contains $_ }).Count
+  git --no-pager diff --no-index --quiet -w -- $UserMd $SharedMd 2>$null | Out-Null
+  $identical = ($LASTEXITCODE -eq 0)
   Write-Host "    You already have ~\.claude\CLAUDE.md ($($userLines.Count) lines)."
-  if ($overlap -gt 0) {
+  if ($identical) {
+    Write-Host "    It's identical to the shared notes, so Replace is the clean choice."
+  } elseif ($overlap -gt 0) {
     Write-Host "    Note: $overlap line(s) of the shared notes are already in it. After merging,"
     Write-Host "    remove those from your own file so they don't appear twice."
   }
@@ -52,17 +56,30 @@ if ($hasContent -and ($userLines -contains $ImportLine)) {
       while (-not $Action) {
         Write-Host ""
         Write-Host "    What do you want to do?"
-        Write-Host "      [m] Merge:   keep your file and add the shared notes (recommended)"
-        Write-Host "      [r] Replace: back up your file and use only the shared notes"
+        if ($identical) {
+          Write-Host "      [m] Merge:   keep your file and add the shared notes"
+          Write-Host "      [r] Replace: back up your file and use only the shared notes (recommended)"
+        } else {
+          Write-Host "      [m] Merge:   keep your file and add the shared notes (recommended)"
+          Write-Host "      [r] Replace: back up your file and use only the shared notes"
+        }
         Write-Host "      [d] Diff:    show your file vs. the shared notes"
         Write-Host "      [a] Abort:   change nothing"
         $choice = Read-Host "    Choice [m/r/d/a]"
         switch ($choice.ToLower()) {
-          ""  { $Action = "merge" }
+          ""  { if ($identical) { $Action = "replace" } else { $Action = "merge" } }
           "m" { $Action = "merge" }
           "r" { $Action = "replace" }
           "a" { $Action = "abort" }
-          "d" { git --no-pager diff --no-index -- $UserMd $SharedMd }
+          "d" {
+            Write-Host ""
+            if ($identical) {
+              Write-Host "    No differences: your file is the same as the shared notes."
+            } else {
+              Write-Host "    --- your ~\.claude\CLAUDE.md   +++ shared notes"
+              git --no-pager diff --no-index -- $UserMd $SharedMd
+            }
+          }
           default { Write-Host "    Please type m, r, d or a." }
         }
       }
